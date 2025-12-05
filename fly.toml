@@ -10,3 +10,10 @@ app = "igdownloader"
 [[mounts]]
   source = "cookies"
   destination = "/data"
+
+  [checks]
+  [checks.http]
+    port = 3000
+    path = "/"
+    interval = "10s"
+    timeout = "5s"
