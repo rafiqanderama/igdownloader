@@ -29,7 +29,7 @@
             box-shadow:0 0 10px #000;
         }
 
-        input[type=text], input[type=file] {
+        input[type=file] {
             width:100%;
             padding:10px;
             margin:10px 0;
@@ -73,9 +73,8 @@
     <!-- YOUTUBE -->
     <div class="box">
         <h2>Upload YouTube Cookies</h2>
-        <p>Masukkan token admin + cookies YouTube (.txt)</p>
+        <p>Upload file cookies.txt YouTube Anda.</p>
 
-        <input type="text" id="ytToken" placeholder="Admin token...">
         <input type="file" id="ytFile">
 
         <button onclick="uploadYT()">Upload YouTube Cookies</button>
@@ -85,9 +84,8 @@
     <!-- INSTAGRAM -->
     <div class="box">
         <h2>Upload Instagram Cookies</h2>
-        <p>Masukkan token admin + cookies Instagram (.json)</p>
+        <p>Upload file instagram.json Anda.</p>
 
-        <input type="text" id="igToken" placeholder="Admin token...">
         <input type="file" id="igFile">
 
         <button onclick="uploadIG()">Upload Instagram Cookies</button>
@@ -95,57 +93,71 @@
     </div>
 
 <script>
+// ===============================
+// Upload YouTube Cookies
+// ===============================
 async function uploadYT() {
-    const token = document.getElementById("ytToken").value.trim();
     const file = document.getElementById("ytFile").files[0];
 
-    if (!token || !file) {
-        document.getElementById("ytStatus").innerHTML = '<p class="error">Token atau file belum diisi!</p>';
+    if (!file) {
+        document.getElementById("ytStatus").innerHTML =
+            '<p class="error">File belum dipilih!</p>';
         return;
     }
 
     let form = new FormData();
-    form.append("token", token);
-    form.append("file", file);
+    form.append("cookies", file);
 
-    const res = await fetch("/upload-youtube", {
+    const res = await fetch("/admin/upload", {
         method: "POST",
+        headers: {
+            "Authorization": "Bearer goryto32"
+        },
         body: form
     });
 
     const data = await res.json();
 
-    if (data.status === "success") {
-        document.getElementById("ytStatus").innerHTML = '<p class="success">Berhasil upload YouTube cookies!</p>';
+    if (data.ok) {
+        document.getElementById("ytStatus").innerHTML =
+            '<p class="success">Cookies YouTube berhasil diupload!</p>';
     } else {
-        document.getElementById("ytStatus").innerHTML = '<p class="error">' + data.error + '</p>';
+        document.getElementById("ytStatus").innerHTML =
+            '<p class="error">' + (data.error || "Gagal upload") + '</p>';
     }
 }
 
+// ===============================
+// Upload Instagram Cookies
+// ===============================
 async function uploadIG() {
-    const token = document.getElementById("igToken").value.trim();
     const file = document.getElementById("igFile").files[0];
 
-    if (!token || !file) {
-        document.getElementById("igStatus").innerHTML = '<p class="error">Token atau file belum diisi!</p>';
+    if (!file) {
+        document.getElementById("igStatus").innerHTML =
+            '<p class="error">File belum dipilih!</p>';
         return;
     }
 
     let form = new FormData();
-    form.append("token", token);
-    form.append("file", file);
+    form.append("cookies", file);
 
-    const res = await fetch("/upload-ig", {
+    const res = await fetch("/admin/upload", {
         method: "POST",
+        headers: {
+            "Authorization": "Bearer goryto32"
+        },
         body: form
     });
 
     const data = await res.json();
 
-    if (data.status === "success") {
-        document.getElementById("igStatus").innerHTML = '<p class="success">Berhasil upload IG cookies!</p>';
+    if (data.ok) {
+        document.getElementById("igStatus").innerHTML =
+            '<p class="success">Cookies Instagram berhasil diupload!</p>';
     } else {
-        document.getElementById("igStatus").innerHTML = '<p class="error">' + data.error + '</p>';
+        document.getElementById("igStatus").innerHTML =
+            '<p class="error">' + (data.error || "Gagal upload") + '</p>';
     }
 }
 </script>
