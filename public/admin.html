@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin - Upload YouTube Cookies</title>
+  <style>
+    body{font-family:Arial;background:#0f1114;color:#e7eef6;padding:20px}
+    .box{max-width:700px;margin:auto;background:#15181b;padding:18px;border-radius:8px}
+    input[type=file]{display:block;margin:10px 0}
+    input[type=text]{width:100%;padding:10px;border-radius:6px;border:1px solid #333;background:#0b0d0f;color:#fff}
+    button{padding:10px 14px;background:#4cafef;border:none;border-radius:6px;color:#042034;font-weight:700}
+    .note{color:#9aa0a6;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Upload YouTube cookies.txt</h2>
+    <p class="note">Ekspor cookies dengan extension (cookies.txt) setelah login di YouTube.</p>
+    <input id="token" placeholder="Admin token (Bearer)"/>
+    <input type="file" id="file" accept=".txt"/>
+    <button id="upload">Upload</button>
+    <div id="status"></div>
+    <script>
+      document.getElementById("upload").addEventListener("click", async ()=>{
+        const token = document.getElementById("token").value.trim();
+        const fileEl = document.getElementById("file");
+        if (!token) return alert("Masukkan token admin");
+        if (!fileEl.files || !fileEl.files[0]) return alert("Pilih file cookies.txt");
+        const fd = new FormData();
+        fd.append("cookies", fileEl.files[0]);
+        document.getElementById("status").innerText = "Uploading...";
+        try {
+          const res = await fetch("/admin/upload", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token },
+            body: fd
+          });
+          const data = await res.json();
+          document.getElementById("status").innerText = JSON.stringify(data);
+        } catch (e) {
+          document.getElementById("status").innerText = "Error: " + e.message;
+        }
+      });
+    </script>
+  </div>
+</body>
+</html>
