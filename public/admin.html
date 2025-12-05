@@ -1,49 +1,152 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Admin Cookie Upload</title>
-  <style>
-    body { background:#0f1114; color:#e7eef6; font-family:Arial; padding:20px; }
-    .box { max-width:600px; margin:auto; background:#15181b; padding:20px; border-radius:10px; }
-    input[type=file], input[type=text] { width:100%; padding:10px; margin:5px 0; border-radius:6px; background:#0b0d0f; color:white; border:1px solid #333; }
-    button { padding:10px 15px; width:100%; margin-top:10px; background:#4cafef; border:none; border-radius:6px; color:#042034; font-weight:bold; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Upload Cookies</title>
+    <style>
+        body {
+            background:#111;
+            color:#fff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align:center;
+            margin-bottom:40px;
+            color:#4da6ff;
+        }
+
+        .box {
+            background:#1b1b1b;
+            padding:20px;
+            margin-bottom:40px;
+            border-radius:8px;
+            max-width:500px;
+            margin-left:auto;
+            margin-right:auto;
+            box-shadow:0 0 10px #000;
+        }
+
+        input[type=text], input[type=file] {
+            width:100%;
+            padding:10px;
+            margin:10px 0;
+            border-radius:5px;
+            border:none;
+            background:#222;
+            color:#fff;
+        }
+
+        button {
+            width:100%;
+            padding:12px;
+            background:#4da6ff;
+            color:#000;
+            border:none;
+            border-radius:5px;
+            font-size:16px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        button:hover {
+            background:#3399ff;
+        }
+
+        .success {
+            color:#6aff6a;
+            margin-top:10px;
+        }
+
+        .error {
+            color:#ff6a6a;
+            margin-top:10px;
+        }
+    </style>
 </head>
 <body>
 
-<div class="box">
-  <h2>Upload YouTube Cookies</h2>
-  <p>Masukkan token admin + cookies.txt</p>
+    <h1>Admin Panel — Upload Cookies</h1>
 
-  <input id="token" placeholder="Admin token...">
-  <input type="file" id="file">
-  <button onclick="uploadCookie()">Upload</button>
+    <!-- YOUTUBE -->
+    <div class="box">
+        <h2>Upload YouTube Cookies</h2>
+        <p>Masukkan token admin + cookies YouTube (.txt)</p>
 
-  <pre id="out"></pre>
-</div>
+        <input type="text" id="ytToken" placeholder="Admin token...">
+        <input type="file" id="ytFile">
+
+        <button onclick="uploadYT()">Upload YouTube Cookies</button>
+        <div id="ytStatus"></div>
+    </div>
+
+    <!-- INSTAGRAM -->
+    <div class="box">
+        <h2>Upload Instagram Cookies</h2>
+        <p>Masukkan token admin + cookies Instagram (.json)</p>
+
+        <input type="text" id="igToken" placeholder="Admin token...">
+        <input type="file" id="igFile">
+
+        <button onclick="uploadIG()">Upload Instagram Cookies</button>
+        <div id="igStatus"></div>
+    </div>
 
 <script>
-async function uploadCookie(){
-  const token = document.getElementById("token").value.trim();
-  const file = document.getElementById("file").files[0];
-  const out = document.getElementById("out");
+async function uploadYT() {
+    const token = document.getElementById("ytToken").value.trim();
+    const file = document.getElementById("ytFile").files[0];
 
-  if (!token) return alert("Isi token dulu");
-  if (!file) return alert("Pilih cookies.txt");
+    if (!token || !file) {
+        document.getElementById("ytStatus").innerHTML = '<p class="error">Token atau file belum diisi!</p>';
+        return;
+    }
 
-  let fd = new FormData();
-  fd.append("cookies", file);
+    let form = new FormData();
+    form.append("token", token);
+    form.append("file", file);
 
-  out.textContent = "Uploading...";
+    const res = await fetch("/upload-youtube", {
+        method: "POST",
+        body: form
+    });
 
-  const res = await fetch("/admin/upload", {
-    method:"POST",
-    headers:{ "Authorization":"Bearer " + token },
-    body: fd
-  });
+    const data = await res.json();
 
-  out.textContent = JSON.stringify(await res.json(), null, 2);
+    if (data.status === "success") {
+        document.getElementById("ytStatus").innerHTML = '<p class="success">Berhasil upload YouTube cookies!</p>';
+    } else {
+        document.getElementById("ytStatus").innerHTML = '<p class="error">' + data.error + '</p>';
+    }
+}
+
+async function uploadIG() {
+    const token = document.getElementById("igToken").value.trim();
+    const file = document.getElementById("igFile").files[0];
+
+    if (!token || !file) {
+        document.getElementById("igStatus").innerHTML = '<p class="error">Token atau file belum diisi!</p>';
+        return;
+    }
+
+    let form = new FormData();
+    form.append("token", token);
+    form.append("file", file);
+
+    const res = await fetch("/upload-ig", {
+        method: "POST",
+        body: form
+    });
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+        document.getElementById("igStatus").innerHTML = '<p class="success">Berhasil upload IG cookies!</p>';
+    } else {
+        document.getElementById("igStatus").innerHTML = '<p class="error">' + data.error + '</p>';
+    }
 }
 </script>
 
