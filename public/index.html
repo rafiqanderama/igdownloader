@@ -1,51 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Multi Downloader</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>MultiSaver — IG / TikTok / YouTube Downloader</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
+  <div class="wrap">
+    <header>
+      <h1>MultiSaver</h1>
+      <p class="tag">Download Instagram, TikTok, YouTube MP4 / MP3 — cepat & mudah</p>
+    </header>
 
-<div class="container">
-
-    <h1>Multi Downloader (IG / TikTok / YouTube)</h1>
-    <p class="subtext">Masukkan URL di kolom sesuai platformnya.</p>
-
-    <!-- Instagram -->
-    <div class="box">
-        <h2>Instagram Downloader</h2>
-        <input type="text" id="ig-url" placeholder="Tempel URL Instagram di sini...">
-        <button onclick="downloadIG()">Download Instagram</button>
+    <main>
+      <section class="card">
+        <h2>Instagram</h2>
+        <input id="ig-url" placeholder="https://www.instagram.com/reel/..." />
+        <button id="ig-btn">Download Instagram</button>
         <div id="ig-result" class="result"></div>
-    </div>
+      </section>
 
-    <!-- TikTok -->
-    <div class="box">
-        <h2>TikTok Downloader</h2>
-        <input type="text" id="tiktok-url" placeholder="Tempel URL TikTok di sini...">
-        <button onclick="downloadTikTok()">Download TikTok</button>
-        <div id="tiktok-result" class="result"></div>
-    </div>
+      <section class="card">
+        <h2>TikTok</h2>
+        <input id="tt-url" placeholder="https://www.tiktok.com/..." />
+        <button id="tt-btn">Download TikTok</button>
+        <div id="tt-result" class="result"></div>
+      </section>
 
-    <!-- YouTube MP4 -->
-    <div class="box">
+      <section class="card">
         <h2>YouTube MP4</h2>
-        <input type="text" id="yt-mp4-url" placeholder="Tempel URL YouTube...">
-        <button onclick="downloadYTMP4()">Download MP4</button>
+        <input id="yt-mp4-url" placeholder="https://www.youtube.com/watch?v=..." />
+        <button id="yt-mp4-btn">Download MP4</button>
         <div id="yt-mp4-result" class="result"></div>
-    </div>
+      </section>
 
-    <!-- YouTube MP3 -->
-    <div class="box">
+      <section class="card">
         <h2>YouTube MP3</h2>
-        <input type="text" id="yt-mp3-url" placeholder="Tempel URL YouTube...">
-        <button onclick="downloadYTMP3()">Download MP3</button>
+        <input id="yt-mp3-url" placeholder="https://www.youtube.com/watch?v=..." />
+        <button id="yt-mp3-btn">Download MP3</button>
         <div id="yt-mp3-result" class="result"></div>
-    </div>
+      </section>
 
-</div>
+      <section class="card small">
+        <h3>Petunjuk singkat</h3>
+        <ol>
+          <li>Paste link ke kolom sesuai platform</li>
+          <li>Tekan tombol Download</li>
+          <li>Tunggu sebentar, link langsung muncul</li>
+        </ol>
+        <p class="note">Catatan: beberapa video perlu JS runtime atau cookie (YouTube age-restricted).</p>
+      </section>
+    </main>
 
-<script src="script.js"></script>
+    <footer>
+      <small>MultiSaver by you • Use responsibly • Respect copyright</small>
+    </footer>
+  </div>
+
+<script src="/script.js"></script>
 </body>
 </html>
