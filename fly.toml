@@ -2,27 +2,27 @@ app = "igdownloader"
 primary_region = "sin"
 
 [build]
-  dockerfile = "Dockerfile"
+dockerfile = "Dockerfile"
 
 [env]
-  PORT = "3000"
-  COOKIES_DIR = "/data/cookies"
+PORT = "3000"
+COOKIES_DIR = "/data/cookies"
 
 [[mounts]]
-  source = "cookies"
-  destination = "/data"
+source = "cookies"
+destination = "/data"
 
 [[checks]]
-  type = "http"
-  port = 3000
-  path = "/"
-  interval = "10s"
-  timeout = "5s"
+type = "http"
+port = 3000
+interval = "10s"
+timeout = "5s"
+grace_period = "5s"
+path = "/"
 
 [http_service]
-  internal_port = 3000
-  force_https = true
-  auto_start_machines = true
-  auto_stop_machines = false
-  min_machines_running = 1
-  processes = ["app"]
+internal_port = 3000
+auto_start_machines = true
+auto_stop_machines = false
+min_machines_running = 1
+force_https = true
