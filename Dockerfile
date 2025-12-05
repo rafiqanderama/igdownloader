@@ -1,21 +1,26 @@
-FROM node:18
+FROM debian:stable-slim
 
-# Install Python, FFmpeg, dan yt-dlp
+# Install dependencies
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip ffmpeg && \
-    pip3 install yt-dlp
+    apt-get install -y curl ffmpeg python3 && \
+    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && \
+    chmod +x /usr/local/bin/yt-dlp
 
-# Set workdir
+# Install Node.js (18.x)
+RUN apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
+
+# Create workdir
 WORKDIR /app
 
-# Copy project files
+# Install project dependencies
 COPY package*.json ./
 RUN npm install
 
+# Copy project files
 COPY . .
 
-# Expose port
 EXPOSE 3000
 
-# Start server
 CMD ["node", "server.js"]
