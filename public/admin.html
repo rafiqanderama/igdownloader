@@ -1,164 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Upload Cookies</title>
-    <style>
-        body {
-            background:#111;
-            color:#fff;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align:center;
-            margin-bottom:40px;
-            color:#4da6ff;
-        }
-
-        .box {
-            background:#1b1b1b;
-            padding:20px;
-            margin-bottom:40px;
-            border-radius:8px;
-            max-width:500px;
-            margin-left:auto;
-            margin-right:auto;
-            box-shadow:0 0 10px #000;
-        }
-
-        input[type=file] {
-            width:100%;
-            padding:10px;
-            margin:10px 0;
-            border-radius:5px;
-            border:none;
-            background:#222;
-            color:#fff;
-        }
-
-        button {
-            width:100%;
-            padding:12px;
-            background:#4da6ff;
-            color:#000;
-            border:none;
-            border-radius:5px;
-            font-size:16px;
-            cursor:pointer;
-            font-weight:bold;
-        }
-
-        button:hover {
-            background:#3399ff;
-        }
-
-        .success {
-            color:#6aff6a;
-            margin-top:10px;
-        }
-
-        .error {
-            color:#ff6a6a;
-            margin-top:10px;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Admin Panel — Upload Cookies</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+        padding: 30px;
+    }
+    .box {
+        background: #1a1a1a;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        width: 450px;
+    }
+    button {
+        width: 100%;
+        padding: 10px;
+        background: #3da6ff;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        margin-top: 10px;
+        border-radius: 6px;
+    }
+    button:hover {
+        background: #1c7ed6;
+    }
+    .error {
+        color: #ff4d4d;
+        margin-top: 10px;
+    }
+</style>
 </head>
 <body>
 
-    <h1>Admin Panel — Upload Cookies</h1>
+<h1>Admin Panel — Upload Cookies</h1>
 
-    <!-- YOUTUBE -->
-    <div class="box">
-        <h2>Upload YouTube Cookies</h2>
-        <p>Upload file cookies.txt YouTube Anda.</p>
+<!-- YOUTUBE -->
+<div class="box">
+    <h2>Upload YouTube Cookies</h2>
+    <input type="file" id="ytfile"><br>
+    <button onclick="uploadYT()">Upload YouTube Cookies</button>
+    <div id="ytstatus" class="error"></div>
+</div>
 
-        <input type="file" id="ytFile">
-
-        <button onclick="uploadYT()">Upload YouTube Cookies</button>
-        <div id="ytStatus"></div>
-    </div>
-
-    <!-- INSTAGRAM -->
-    <div class="box">
-        <h2>Upload Instagram Cookies</h2>
-        <p>Upload file instagram.json Anda.</p>
-
-        <input type="file" id="igFile">
-
-        <button onclick="uploadIG()">Upload Instagram Cookies</button>
-        <div id="igStatus"></div>
-    </div>
+<!-- INSTAGRAM -->
+<div class="box">
+    <h2>Upload Instagram Cookies</h2>
+    <input type="file" id="igfile"><br>
+    <button onclick="uploadIG()">Upload Instagram Cookies</button>
+    <div id="igstatus" class="error"></div>
+</div>
 
 <script>
-// ===============================
-// Upload YouTube Cookies
-// ===============================
+const ADMIN_TOKEN = "goryto32"; // TOKEN ADMIN TUAN SAYA
+
 async function uploadYT() {
-    const file = document.getElementById("ytFile").files[0];
+    const file = document.getElementById("ytfile").files[0];
+    if (!file) return alert("Pilih file cookies.txt dulu");
 
-    if (!file) {
-        document.getElementById("ytStatus").innerHTML =
-            '<p class="error">File belum dipilih!</p>';
-        return;
-    }
-
-    let form = new FormData();
+    const form = new FormData();
     form.append("cookies", file);
 
     const res = await fetch("/admin/upload", {
         method: "POST",
         headers: {
-            "Authorization": "Bearer goryto32"
+            "Authorization": "Bearer " + ADMIN_TOKEN
         },
         body: form
     });
 
-    const data = await res.json();
+    const out = document.getElementById("ytstatus");
 
-    if (data.ok) {
-        document.getElementById("ytStatus").innerHTML =
-            '<p class="success">Cookies YouTube berhasil diupload!</p>';
-    } else {
-        document.getElementById("ytStatus").innerHTML =
-            '<p class="error">' + (data.error || "Gagal upload") + '</p>';
-    }
+    if (res.ok) out.textContent = "Upload sukses!";
+    else out.textContent = "Unauthorized";
 }
 
-// ===============================
-// Upload Instagram Cookies
-// ===============================
 async function uploadIG() {
-    const file = document.getElementById("igFile").files[0];
+    const file = document.getElementById("igfile").files[0];
+    if (!file) return alert("Pilih file instagram.json dulu");
 
-    if (!file) {
-        document.getElementById("igStatus").innerHTML =
-            '<p class="error">File belum dipilih!</p>';
-        return;
-    }
-
-    let form = new FormData();
+    const form = new FormData();
     form.append("cookies", file);
 
-    const res = await fetch("/admin/upload", {
+    const res = await fetch("/admin/upload-ig", {
         method: "POST",
         headers: {
-            "Authorization": "Bearer goryto32"
+            "Authorization": "Bearer " + ADMIN_TOKEN
         },
         body: form
     });
 
-    const data = await res.json();
+    const out = document.getElementById("igstatus");
 
-    if (data.ok) {
-        document.getElementById("igStatus").innerHTML =
-            '<p class="success">Cookies Instagram berhasil diupload!</p>';
-    } else {
-        document.getElementById("igStatus").innerHTML =
-            '<p class="error">' + (data.error || "Gagal upload") + '</p>';
-    }
+    if (res.ok) out.textContent = "Upload sukses!";
+    else out.textContent = "Unauthorized";
 }
 </script>
 
