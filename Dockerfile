@@ -1,21 +1,21 @@
 FROM node:18
 
-# buat folder kerja
+# Install Python, FFmpeg, dan yt-dlp
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip ffmpeg && \
+    pip3 install yt-dlp
+
+# Set workdir
 WORKDIR /app
 
-# copy semua file
+# Copy project files
+COPY package*.json ./
+RUN npm install
+
 COPY . .
 
-# install yt-dlp binary Linux
-RUN apt-get update && apt-get install -y curl \
-    && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-    && chmod +x /usr/local/bin/yt-dlp
-
-# install dependencies
-RUN npm install --omit=dev
-
-# expose port
+# Expose port
 EXPOSE 3000
 
-# start server
+# Start server
 CMD ["node", "server.js"]
