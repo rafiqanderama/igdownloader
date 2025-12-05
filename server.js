@@ -1,4 +1,7 @@
-// server.js
+// =========================
+// SERVER.JS FINAL VERSION
+// =========================
+
 const express = require("express");
 const cors = require("cors");
 const { execFile } = require("child_process");
@@ -10,177 +13,147 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// path untuk menyimpan cookies (pastikan ini path volume di fly.toml)
-const COOKIES_DIR = process.env.COOKIES_DIR || "/data/cookies"; 
+// === Paths ===
+const COOKIES_DIR = process.env.COOKIES_DIR || "/data/cookies";
 const COOKIE_PATH = path.join(COOKIES_DIR, "youtube.txt");
-
-// pastikan folder ada
-if (!fs.existsSync(COOKIES_DIR)) {
-  try { fs.mkdirSync(COOKIES_DIR, { recursive: true }); } catch(e){ console.warn(e); }
-}
-
 const YTDLP = process.env.YTDLP_PATH || "/usr/local/bin/yt-dlp";
 
-// helper menjalankan yt-dlp (mengembalikan stdout string)
+// Ensure directory exists
+if (!fs.existsSync(COOKIES_DIR)) {
+  fs.mkdirSync(COOKIES_DIR, { recursive: true });
+}
+
+// === Helper: run yt-dlp raw
 function runYtDlpRaw(args) {
   return new Promise((resolve, reject) => {
     execFile(YTDLP, args, { maxBuffer: 1024 * 1024 * 30 }, (err, stdout, stderr) => {
-      if (err) return reject(new Error((stderr || err || "").toString()));
+      if (err) return reject(new Error(stderr || err.toString()));
       resolve(stdout.toString());
     });
   });
 }
 
+// === Helper: run yt-dlp JSON
 function runYtDlpJSON(args) {
   return new Promise((resolve, reject) => {
     execFile(YTDLP, args, { maxBuffer: 1024 * 1024 * 30 }, (err, stdout, stderr) => {
-      if (err) return reject(new Error((stderr || err || "").toString()));
+      if (err) return reject(new Error(stderr || err.toString()));
       try {
-        const json = JSON.parse(stdout.toString());
-        resolve(json);
+        resolve(JSON.parse(stdout.toString()));
       } catch (e) {
-        reject(new Error("Failed to parse JSON: " + e.message));
+        return reject(new Error("JSON parse error: " + e.message));
       }
     });
   });
 }
 
-// DETEK PLATFORM sederhana
-function detectPlatform(url = "") {
-  const u = (url || "").toLowerCase();
-  if (u.includes("instagram.com") || u.includes("instagr.am")) return "instagram";
-  if (u.includes("tiktok.com") || u.includes("vt.tiktok.com")) return "tiktok";
-  if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+// Detect platform
+function detect(url) {
+  url = url.toLowerCase();
+  if (url.includes("instagram.com")) return "ig";
+  if (url.includes("tiktok.com")) return "tiktok";
+  if (url.includes("youtu.be") || url.includes("youtube.com")) return "yt";
   return "unknown";
 }
 
-// === Upload cookie (admin)
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ""; // set di Fly secrets
+// ===============================
+// ADMIN — Upload Cookies
+// ===============================
+
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "";
+
+// Multer config
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, COOKIES_DIR);
-  },
-  filename: function (req, file, cb) {
-    cb(null, "youtube.txt"); // selalu simpan sebagai youtube.txt
-  }
+  destination: (_, __, cb) => cb(null, COOKIES_DIR),
+  filename: (_, __, cb) => cb(null, "youtube.txt")
 });
+
 const upload = multer({ storage });
 
+// Middleware check admin token
 function requireAdmin(req, res, next) {
   const header = req.headers["authorization"] || "";
   const token = header.replace("Bearer ", "").trim();
-  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) return res.status(401).json({ error: "Unauthorized" });
+
+  if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
   next();
 }
 
-// endpoint upload cookies: POST /admin/upload (form-data file field name "cookies")
 app.post("/admin/upload", requireAdmin, upload.single("cookies"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-  // basic validation: file contains "youtube" or "SID" or typical cookies content
-  const content = fs.readFileSync(path.join(COOKIES_DIR, "youtube.txt"), "utf8");
-  if (content.length < 20) {
-    return res.status(400).json({ error: "Uploaded file seems too small" });
-  }
-  return res.json({ ok: true, message: "Cookies uploaded" });
+  return res.json({ ok: true, message: "Cookie uploaded successfully" });
 });
 
-// optional: show whether cookie exists
 app.get("/admin/cookie-status", requireAdmin, (req, res) => {
   const exists = fs.existsSync(COOKIE_PATH);
-  let info = { exists };
-  if (exists) {
-    try {
-      const stat = fs.statSync(COOKIE_PATH);
-      info.size = stat.size;
-      info.mtime = stat.mtime;
-    } catch(e){}
-  }
-  res.json(info);
+  return res.json({ exists });
 });
 
-// API utama: POST /api/download { url, type }
-// type: for youtube "mp3" or "mp4"
+// ===============================
+// API Downloader
+// ===============================
+
 app.post("/api/download", async (req, res) => {
   const { url, type } = req.body;
-  if (!url) return res.status(400).json({ error: "Missing url" });
-  const platform = detectPlatform(url);
+  if (!url) return res.status(400).json({ error: "URL required" });
 
-  // helper add cookie arg if cookie exists and platform is youtube
-  const cookieArgIfAny = [];
-  if (platform === "youtube" && fs.existsSync(COOKIE_PATH)) {
-    cookieArgIfAny.push("--cookies", COOKIE_PATH);
-  }
+  const platform = detect(url);
+  const cookieArgs = fs.existsSync(COOKIE_PATH) ? ["--cookies", COOKIE_PATH] : [];
 
   try {
-    if (platform === "instagram") {
-      // JSON extraction, choose best mp4
-      const args = ["-j", "--no-warnings", "--no-check-certificate", url];
-      const data = await runYtDlpJSON(args);
+    // IG
+    if (platform === "ig") {
+      const json = await runYtDlpJSON(["-j", url]);
       const results = [];
-      if (Array.isArray(data.entries)) {
-        for (const e of data.entries) {
+
+      if (Array.isArray(json.entries)) {
+        for (const e of json.entries) {
           if (e.formats) {
-            const best = e.formats.filter(f => f.ext === "mp4" && f.acodec !== "none").sort((a,b)=> (b.height||0)-(a.height||0))[0];
+            const best = e.formats.find(f => f.ext === "mp4" && f.acodec !== "none");
             if (best) results.push({ type: "video", url: best.url });
-          } else if (e.url && e.ext === "jpg") {
-            results.push({ type: "image", url: e.url });
           }
         }
-      } else if (data.formats) {
-        const best = data.formats.filter(f => f.ext === "mp4" && f.acodec !== "none").sort((a,b)=> (b.height||0)-(a.height||0))[0];
+      } else if (json.formats) {
+        const best = json.formats.find(f => f.ext === "mp4");
         if (best) results.push({ type: "video", url: best.url });
-      } else if (data.url && data.ext === "jpg") {
-        results.push({ type: "image", url: data.url });
       }
+
       return res.json({ platform: "instagram", results });
     }
 
+    // TikTok
     if (platform === "tiktok") {
-      // use JSON
-      const args = ["-j", "--no-warnings", "--no-check-certificate", url];
-      const data = await runYtDlpJSON(args);
-      let best = null;
-      if (data && data.formats) {
-        best = data.formats.find(f => f.vcodec !== "none" && f.acodec !== "none") || data.formats.reverse().find(f => f.ext === "mp4");
-      }
-      if (best) return res.json({ platform: "tiktok", results: [{ type: "video", url: best.url }] });
-      return res.status(500).json({ error: "No format" });
+      const json = await runYtDlpJSON(["-j", url]);
+      const best = json.formats.find(f => f.acodec !== "none");
+      return res.json({ platform: "tiktok", results: [{ url: best.url }] });
     }
 
-    if (platform === "youtube") {
-      // MP3: get direct audio stream URL via -x --audio-format mp3 -g
-      if (type === "mp3") {
-        const args = ["-x", "--audio-format", "mp3", "-g", "--no-warnings", "--no-check-certificate", ...cookieArgIfAny, url];
-        const out = await runYtDlpRaw(args);
-        return res.json({ platform: "youtube", type: "mp3", url: out.trim() });
-      }
-      // MP4: use JSON extraction and choose best mp4
-      if (type === "mp4") {
-        // pass extractor-args to help player client
-        const args = ["-j", "--no-warnings", "--no-check-certificate", "--extractor-args", "youtube:player_client=web", ...cookieArgIfAny, url];
-        const data = await runYtDlpJSON(args);
-        if (!data.formats) return res.status(500).json({ error: "No formats returned" });
-        const best = data.formats.filter(f => f.ext === "mp4" && f.vcodec !== "none").sort((a,b)=> (b.height||0)-(a.height||0))[0];
-        if (!best) return res.status(500).json({ error: "No suitable MP4 found" });
-        return res.json({ platform: "youtube", type: "mp4", url: best.url, height: best.height });
-      }
-      return res.status(400).json({ error: "Specify type mp3 or mp4 for youtube" });
+    // YouTube MP3
+    if (platform === "yt" && type === "mp3") {
+      const out = await runYtDlpRaw(["-x", "--audio-format", "mp3", "-g", ...cookieArgs, url]);
+      return res.json({ platform: "youtube", url: out.trim() });
     }
 
-    return res.status(400).json({ error: "Unsupported URL" });
+    // YouTube MP4
+    if (platform === "yt" && type === "mp4") {
+      const json = await runYtDlpJSON(["-j", "--extractor-args", "youtube:player_client=web", ...cookieArgs, url]);
+      const best = json.formats.find(f => f.ext === "mp4" && f.acodec !== "none");
+      return res.json({ platform: "youtube", url: best.url });
+    }
+
+    return res.status(400).json({ error: "Unsupported URL or missing type" });
+
   } catch (err) {
-    console.error("ERR", err);
-    return res.status(500).json({ error: err.message || String(err) });
+    return res.status(500).json({ error: err.message });
   }
 });
 
-// serve admin upload page
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
-
-// static frontend
+// ===============================
+// PUBLIC FILES
+// ===============================
 app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=> console.log("Server up on", PORT));
+app.listen(PORT, () => console.log("Server running on port", PORT));
