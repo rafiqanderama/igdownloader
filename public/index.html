@@ -1,46 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="utf-8"/>
-  <title>Multi Downloader</title>
-  <script src="script.js" defer></script>
-  <style>
-    body { background:#0f1114; color:#e7eef6; font-family:Arial; padding:20px; }
-    .box { max-width:600px; margin:auto; background:#15181b; padding:20px; border-radius:10px; margin-bottom:25px; }
-    input { width:100%; padding:10px; border-radius:6px; border:1px solid #333; margin-top:10px; background:#0b0d0f; color:#fff; }
-    button { margin-top:15px; padding:10px 15px; background:#4cafef; border:none; border-radius:6px; color:#042034; font-weight:bold; width:100%; }
-    h2{color:#4cafef;}
-  </style>
+<meta charset="UTF-8" />
+<title>Instagram Downloader</title>
+<style>
+body {
+  background: #111;
+  font-family: Arial;
+  color: white;
+  text-align: center;
+  padding: 40px;
+}
+input, button {
+  padding: 10px;
+  width: 300px;
+  margin: 10px;
+}
+button {
+  background: #4aa3ff;
+  border: none;
+  cursor: pointer;
+}
+pre {
+  background: #222;
+  padding: 20px;
+  width: 350px;
+  margin: 20px auto;
+  white-space: pre-wrap;
+}
+</style>
 </head>
 <body>
+<h2>Instagram Downloader</h2>
 
-<div class="box">
-  <h2>Instagram Downloader</h2>
-  <input id="igUrl" placeholder="Instagram URL...">
-  <button onclick="downloadIG()">Download IG</button>
-  <pre id="igOut"></pre>
-</div>
+<input id="url" placeholder="Tempel URL IG disini..."><br>
+<button onclick="downloadIG()">Download</button>
 
-<div class="box">
-  <h2>TikTok Downloader</h2>
-  <input id="ttUrl" placeholder="TikTok URL...">
-  <button onclick="downloadTT()">Download TikTok</button>
-  <pre id="ttOut"></pre>
-</div>
+<pre id="result"></pre>
 
-<div class="box">
-  <h2>YouTube MP4</h2>
-  <input id="ytmp4" placeholder="YouTube URL...">
-  <button onclick="downloadYT('mp4')">Download MP4</button>
-  <pre id="mp4Out"></pre>
-</div>
-
-<div class="box">
-  <h2>YouTube MP3</h2>
-  <input id="ytmp3" placeholder="YouTube URL...">
-  <button onclick="downloadYT('mp3')">Download MP3</button>
-  <pre id="mp3Out"></pre>
-</div>
+<script>
+async function downloadIG() {
+  const url = document.getElementById("url").value;
+  const res = await fetch("/api/ig", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({url})
+  });
+  const data = await res.json();
+  document.getElementById("result").textContent = JSON.stringify(data, null, 2);
+}
+</script>
 
 </body>
 </html>
