@@ -1,17 +1,77 @@
-:root{--bg:#0e0f12;--card:#171820;--accent:#4cafef;--muted:#9aa0a6;color:#e6eef6}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
-.wrap{max-width:860px;margin:28px auto;padding:20px}
-header{text-align:center;color:var(--accent)}
-h1{margin:6px 0;font-size:28px}
-.tag{color:var(--muted);margin-top:0}
-main{display:grid;grid-template-columns:1fr;gap:18px;margin-top:18px}
-.card{background:var(--card);padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
-.card small{color:var(--muted)}
-input{width:100%;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);margin:8px 0;background:transparent;color:inherit;font-size:14px}
-button{width:100%;background:var(--accent);color:#042034;padding:12px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
-.result{margin-top:10px;color:var(--muted);font-size:14px;word-break:break-word}
-.result a{display:inline-block;padding:8px 12px;background:#0b8be3;color:white;border-radius:6px;text-decoration:none;margin-top:6px}
-.small{font-size:14px}
-.note{color:#c9d1d9;font-size:13px}
-footer{text-align:center;color:var(--muted);margin-top:18px}
+async function apiPost(body) {
+  try {
+    const res = await fetch("/api/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    return await res.json();
+  } catch (e) {
+    return { error: e.message || String(e) };
+  }
+}
+
+// helper for rendering
+function showResult(el, contentHtml) {
+  el.innerHTML = contentHtml;
+}
+
+// Instagram
+document.getElementById("ig-btn").addEventListener("click", async () => {
+  const url = document.getElementById("ig-url").value.trim();
+  const out = document.getElementById("ig-result");
+  showResult(out, "Memproses...");
+  const data = await apiPost({ url });
+  if (data && data.results && data.results.length) {
+    // if multiple items show them
+    const html = data.results.map((it, i) => {
+      if (it.type === "video") return `<div>Video ${i+1}: <a href="${it.url}" target="_blank" rel="noreferrer">Download</a></div>`;
+      if (it.type === "image") return `<div>Image ${i+1}: <a href="${it.url}" target="_blank" rel="noreferrer">Download</a></div>`;
+      return `<div>Item ${i+1}: <a href="${it.url}" target="_blank">Download</a></div>`;
+    }).join("");
+    showResult(out, html);
+  } else if (data.error) {
+    showResult(out, `<div style="color:#ffc6c6">Error: ${data.error}</div>`);
+  } else {
+    showResult(out, "Tidak ada hasil.");
+  }
+});
+
+// Tiktok
+document.getElementById("tt-btn").addEventListener("click", async () => {
+  const url = document.getElementById("tt-url").value.trim();
+  const out = document.getElementById("tt-result");
+  showResult(out, "Memproses...");
+  const data = await apiPost({ url });
+  if (data && data.results && data.results.length) {
+    showResult(out, `<a href="${data.results[0].url}" target="_blank">Download TikTok</a>`);
+  } else {
+    showResult(out, `<div style="color:#ffc6c6">Error: ${(data && data.error) || "Tidak ada hasil"}</div>`);
+  }
+});
+
+// YouTube MP4
+document.getElementById("yt-mp4-btn").addEventListener("click", async () => {
+  const url = document.getElementById("yt-mp4-url").value.trim();
+  const out = document.getElementById("yt-mp4-result");
+  showResult(out, "Memproses...");
+  const data = await apiPost({ url, type: "mp4" });
+  if (data && data.url) {
+    showResult(out, `<a href="${data.url}" target="_blank">Download MP4 (${data.height || ""})</a>`);
+  } else {
+    showResult(out, `<div style="color:#ffc6c6">Error: ${(data && data.error) || "Tidak ada hasil"}</div>`);
+  }
+});
+
+// YouTube MP3
+document.getElementById("yt-mp3-btn").addEventListener("click", async () => {
+  const url = document.getElementById("yt-mp3-url").value.trim();
+  const out = document.getElementById("yt-mp3-result");
+  showResult(out, "Memproses...");
+  const data = await apiPost({ url, type: "mp3" });
+  if (data && data.url) {
+    showResult(out, `<a href="${data.url}" target="_blank">Download MP3</a>`);
+  } else {
+    showResult(out, `<div style="color:#ffc6c6">Error: ${(data && data.error) || "Tidak ada hasil"}</div>`);
+  }
+});
