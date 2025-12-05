@@ -1,8 +1,10 @@
 FROM debian:stable-slim
 
 RUN apt-get update && apt-get install -y \
-  curl ffmpeg python3 python3-pip && \
-  pip3 install yt-dlp && \
+  curl ffmpeg python3 && \
+  curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+  -o /usr/local/bin/yt-dlp && \
+  chmod a+rx /usr/local/bin/yt-dlp && \
   mkdir -p /app
 
 WORKDIR /app
