@@ -39,7 +39,7 @@ app.post("/api/ig", async (req, res) => {
   if (!url) return res.json({ error: "URL tidak boleh kosong" });
 
   try {
-    const json = JSON.parse(await runYtDlp(url));
+    const json = JSON.parse(await runYtDlpWithCookies(url));
 
     let result = [];
 
@@ -82,6 +82,18 @@ function checkAdmin(req, res, next) {
     return res.status(401).json({ error: "Unauthorized" });
   next();
 }
+
+function runYtDlpWithCookies(url) {
+  const args = ["-j", "--cookies", IG_COOKIE_PATH, url];
+
+  return new Promise((resolve, reject) => {
+    execFile(YTDLP, args, { maxBuffer: 1024 * 1024 * 20 }, (err, stdout, stderr) => {
+      if (err) return reject(stderr || err.toString());
+      resolve(stdout.toString());
+    });
+  });
+}
+
 
 // endpoint upload cookie ig
 app.post("/admin/upload-ig-cookie", checkAdmin, upload.single("cookie"), (req, res) => {
