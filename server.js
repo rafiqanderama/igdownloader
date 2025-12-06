@@ -1,13 +1,23 @@
 const express = require("express");
 const cors = require("cors");
 const { execFile } = require("child_process");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// === Serve static website (index.html, script.js, style.css) ===
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+// === YT-DLP PATH ===
 const YTDLP = "/usr/local/bin/yt-dlp";
 
+// === RUN YT-DLP ===
 function runYtDlp(url) {
   return new Promise((resolve, reject) => {
     execFile(
@@ -22,6 +32,7 @@ function runYtDlp(url) {
   });
 }
 
+// === IG DOWNLOADER ===
 app.post("/api/ig", async (req, res) => {
   const { url } = req.body;
   if (!url) return res.json({ error: "URL tidak boleh kosong" });
@@ -51,4 +62,5 @@ app.post("/api/ig", async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log("IG Downloader running on port 3000"));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("IG Downloader running on port", PORT));
