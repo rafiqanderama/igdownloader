@@ -1,34 +1,65 @@
-async function api(url, type){
-  return await fetch("/api/download", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ url, type })
-  }).then(r=>r.json());
+const API = "https://igdownloader.fly.dev";
+
+async function downloadIG() {
+    let url = document.getElementById("ig-url").value;
+    let out = document.getElementById("ig-result");
+
+    out.innerHTML = "Memproses...";
+
+    let res = await fetch(API + "/api/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({url})
+    });
+
+    let data = await res.json();
+    out.innerHTML = JSON.stringify(data, null, 2);
 }
 
-async function downloadIG(){
-  let url = document.getElementById("igUrl").value;
-  let out = document.getElementById("igOut");
-  out.textContent = "Loading...";
-  out.textContent = JSON.stringify(await api(url), null, 2);
+async function downloadTikTok() {
+    let url = document.getElementById("tiktok-url").value;
+    let out = document.getElementById("tiktok-result");
+
+    out.innerHTML = "Memproses...";
+
+    let res = await fetch(API + "/api/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({url})
+    });
+
+    let data = await res.json();
+    out.innerHTML = JSON.stringify(data, null, 2);
 }
 
-async function downloadTT(){
-  let url = document.getElementById("ttUrl").value;
-  let out = document.getElementById("ttOut");
-  out.textContent = "Loading...";
-  out.textContent = JSON.stringify(await api(url), null, 2);
+async function downloadYTMP4() {
+    let url = document.getElementById("yt-mp4-url").value;
+    let out = document.getElementById("yt-mp4-result");
+
+    out.innerHTML = "Memproses...";
+
+    let res = await fetch(API + "/api/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({url, type: "mp4"})
+    });
+
+    let data = await res.json();
+    out.innerHTML = JSON.stringify(data, null, 2);
 }
 
-async function downloadYT(type){
-  let url = (type === "mp4")
-    ? document.getElementById("ytmp4").value
-    : document.getElementById("ytmp3").value;
+async function downloadYTMP3() {
+    let url = document.getElementById("yt-mp3-url").value;
+    let out = document.getElementById("yt-mp3-result");
 
-  let out = (type === "mp4")
-    ? document.getElementById("mp4Out")
-    : document.getElementById("mp3Out");
+    out.innerHTML = "Memproses...";
 
-  out.textContent = "Loading...";
-  out.textContent = JSON.stringify(await api(url, type), null, 2);
+    let res = await fetch(API + "/api/download", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({url, type: "mp3"})
+    });
+
+    let data = await res.json();
+    out.innerHTML = JSON.stringify(data, null, 2);
 }
