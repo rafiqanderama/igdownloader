@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Upload IG Cookies</title>
+<style>
+body {
+    background: #111;
+    color: #fff;
+    font-family: Arial;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.card {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 10px;
+    width: 380px;
+    text-align: center;
+}
+input, button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+}
+button {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+.success { color: #4caf50; margin-top: 10px; }
+.error   { color: #ff4444; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Upload Instagram Cookies</h2>
+    <p>Upload file <b>ig.txt</b> dari browser kamu.</p>
+
+    <input type="file" id="fileInput">
+    <button onclick="upload()">Upload</button>
+
+    <div id="response"></div>
+</div>
+
+<script>
+async function upload() {
+    const file = document.getElementById("fileInput").files[0];
+    let respDiv = document.getElementById("response");
+
+    if (!file) {
+        respDiv.innerHTML = "<p class='error'>Pilih file dulu!</p>";
+        return;
+    }
+
+    let form = new FormData();
+    form.append("cookie", file);
+
+    let res = await fetch("/admin/upload-ig-cookie", {
+        method: "POST",
+        headers: { "Authorization": "Bearer goryto32" },
+        body: form
+    });
+
+    let json = await res.json();
+
+    if (json.success) {
+        respDiv.innerHTML = "<p class='success'>Cookie IG berhasil diupload!</p>";
+    } else {
+        respDiv.innerHTML = "<p class='error'>" + json.error + "</p>";
+    }
+}
+</script>
+
+</body>
+</html>
