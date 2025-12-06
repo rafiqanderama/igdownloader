@@ -1,12 +1,11 @@
 FROM debian:stable-slim
 
-# Install dependencies
+# Install dependency basic (tanpa python-pip!)
 RUN apt-get update && \
-    apt-get install -y curl ffmpeg python3 python3-pip && \
-    pip3 install yt-dlp && \
-    mkdir -p /app
+    apt-get install -y curl ffmpeg python3 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp to /usr/local/bin explicitly
+# Download yt-dlp binary (tidak pakai pip!)
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
     -o /usr/local/bin/yt-dlp && \
     chmod +x /usr/local/bin/yt-dlp
