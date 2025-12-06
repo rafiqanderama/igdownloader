@@ -1,55 +1,51 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Instagram Downloader</title>
-<style>
-body {
-  background: #111;
-  font-family: Arial;
-  color: white;
-  text-align: center;
-  padding: 40px;
-}
-input, button {
-  padding: 10px;
-  width: 300px;
-  margin: 10px;
-}
-button {
-  background: #4aa3ff;
-  border: none;
-  cursor: pointer;
-}
-pre {
-  background: #222;
-  padding: 20px;
-  width: 350px;
-  margin: 20px auto;
-  white-space: pre-wrap;
-}
-</style>
+<meta charset="UTF-8">
+<title>Multi Downloader</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h2>Instagram Downloader</h2>
 
-<input id="url" placeholder="Tempel URL IG disini..."><br>
-<button onclick="downloadIG()">Download</button>
+<div class="container">
 
-<pre id="result"></pre>
+    <h1>Multi Downloader (IG / TikTok / YouTube)</h1>
+    <p class="subtext">Masukkan URL di kolom sesuai platformnya.</p>
 
-<script>
-async function downloadIG() {
-  const url = document.getElementById("url").value;
-  const res = await fetch("/api/ig", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({url})
-  });
-  const data = await res.json();
-  document.getElementById("result").textContent = JSON.stringify(data, null, 2);
-}
-</script>
+    <!-- Instagram -->
+    <div class="box">
+        <h2>Instagram Downloader</h2>
+        <input type="text" id="ig-url" placeholder="Tempel URL Instagram di sini...">
+        <button onclick="downloadIG()">Download Instagram</button>
+        <div id="ig-result" class="result"></div>
+    </div>
 
+    <!-- TikTok -->
+    <div class="box">
+        <h2>TikTok Downloader</h2>
+        <input type="text" id="tiktok-url" placeholder="Tempel URL TikTok di sini...">
+        <button onclick="downloadTikTok()">Download TikTok</button>
+        <div id="tiktok-result" class="result"></div>
+    </div>
+
+    <!-- YouTube MP4 -->
+    <div class="box">
+        <h2>YouTube MP4</h2>
+        <input type="text" id="yt-mp4-url" placeholder="Tempel URL YouTube...">
+        <button onclick="downloadYTMP4()">Download MP4</button>
+        <div id="yt-mp4-result" class="result"></div>
+    </div>
+
+    <!-- YouTube MP3 -->
+    <div class="box">
+        <h2>YouTube MP3</h2>
+        <input type="text" id="yt-mp3-url" placeholder="Tempel URL YouTube...">
+        <button onclick="downloadYTMP3()">Download MP3</button>
+        <div id="yt-mp3-result" class="result"></div>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
