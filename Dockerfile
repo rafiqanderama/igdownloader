@@ -1,22 +1,27 @@
-# Base image Node.js
-FROM node:18-slim
+# Dockerfile minimal, based on official Node to avoid python/pip system-managed issues
+FROM node:18-bullseye-slim
 
-# Install ffmpeg and yt-dlp
-RUN apt-get update && apt-get install -y ffmpeg curl && \
-    curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
-    -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp
+# install ffmpeg (required for some yt-dlp features) and curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# download standalone yt-dlp binary (executable)
+RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+  && chmod a+rx /usr/local/bin/yt-dlp
+
+# app dir
 WORKDIR /app
 
-# Copy project files
-COPY package*.json ./
-RUN npm install
+# copy package.json first for layer caching, then install
+COPY package.json package-lock.json* ./
+RUN npm ci --production || npm install --production
 
+# copy app
 COPY . .
 
-# Expose port
+# expose port (match fly.toml)
 EXPOSE 3000
 
-# Start server
+# start
 CMD ["node", "server.js"]
