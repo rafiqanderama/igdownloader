@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel — Upload IG Cookies</title>
+<style>
+body {
+    font-family: Arial;
+    background: #111;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+}
+.container {
+    background: #1b1b1b;
+    padding: 25px;
+    border-radius: 12px;
+    width: 420px;
+}
+.btn {
+    background: #1e90ff;
+    padding: 10px;
+    border: none;
+    width: 100%;
+    color: white;
+    margin-top: 10px;
+    border-radius: 8px;
+}
+input[type=file], input[type=text] {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 5px;
+}
+.msg {
+    margin-top: 10px;
+    font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Upload Instagram Cookies</h2>
+    <p>Upload file <b>instagram.txt</b> hasil export Netscape.</p>
+
+    <input type="text" id="token" placeholder="Admin token...">
+    <input type="file" id="file">
+
+    <button class="btn" onclick="uploadIG()">Upload IG Cookies</button>
+
+    <div id="msg" class="msg"></div>
+</div>
+
+<script>
+async function uploadIG() {
+    const file = document.getElementById("file").files[0];
+    const token = document.getElementById("token").value.trim();
+    const msg = document.getElementById("msg");
+
+    if (!file) return msg.innerHTML = "File belum dipilih!";
+    if (!token) return msg.innerHTML = "Token harus diisi!";
+
+    const form = new FormData();
+    form.append("cookies", file);
+
+    const req = await fetch("/admin/upload-ig", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + token },
+        body: form
+    });
+
+    const res = await req.json();
+    msg.innerHTML = res.error ? res.error : res.message;
+}
+</script>
+
+</body>
+</html>
