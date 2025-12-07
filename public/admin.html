@@ -1,88 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Admin Upload IG Cookies</title>
-    <style>
-        body {
-            background:#111;
-            color:white;
-            font-family: Arial;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh;
-        }
-        .box {
-            width:400px;
-            padding:20px;
-            background:#1b1b1b;
-            border-radius:10px;
-            box-shadow:0 0 15px #000;
-        }
-        input, button {
-            width:100%;
-            padding:10px;
-            margin-top:10px;
-            border-radius:5px;
-            border:none;
-        }
-        button {
-            background:#3498db;
-            color:white;
-            cursor:pointer;
-        }
-        button:hover {
-            background:#2980b9;
-        }
-        #msg { margin-top:15px; color:#ff5555; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Upload IG Cookies</title>
+  <script src="admin.js" defer></script>
 </head>
 <body>
+  <h2>Upload Instagram Cookies</h2>
 
-<div class="box">
-    <h2>Upload Instagram Cookies</h2>
+  <input id="token" placeholder="Admin token">
+  <br><br>
 
-    <input type="text" id="token" placeholder="Admin token...">
-    <input type="file" id="file">
+  <input id="file" type="file">
+  <br><br>
 
-    <button onclick="uploadIG()">Upload Cookies IG</button>
+  <button onclick="uploadIG()">Upload Cookies IG</button>
 
-    <div id="msg"></div>
-</div>
-
-<script>
-async function uploadIG() {
-    const token = document.getElementById("token").value.trim();
-    const file = document.getElementById("file").files[0];
-    const msg = document.getElementById("msg");
-
-    if (!token || !file) {
-        msg.textContent = "Token & file tidak boleh kosong!";
-        return;
-    }
-
-    const form = new FormData();
-    form.append("cookies", file);
-
-    msg.textContent = "Uploading...";
-
-    try {
-        const res = await fetch("/admin/upload-ig", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + token
-            },
-            body: form
-        });
-
-        const data = await res.json();
-        msg.textContent = JSON.stringify(data, null, 2);
-    } catch (err) {
-        msg.textContent = err.toString();
-    }
-}
-</script>
-
+  <div id="status"></div>
 </body>
 </html>
