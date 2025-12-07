@@ -1,56 +1,108 @@
 const express = require("express");
-const multer = require("multer");
+const cors = require("cors");
+const { execFile } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { execFile } = require("child_process");
+const multer = require("multer");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
-const IG_COOKIES = "/data/instagram.txt";
-const ADMIN_TOKEN = "goryto32";
+// =======================
+// Paths
+// =======================
+const DATA_DIR = "/data";
+const IG_COOKIE_PATH = path.join(DATA_DIR, "ig_cookies.txt");
 
-if (!fs.existsSync("/data")) fs.mkdirSync("/data");
-
-const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, "/data"),
-  filename: (_, __, cb) => cb(null, "instagram.txt")
-});
-const upload = multer({ storage });
-
-function auth(req, res, next) {
-  const token = (req.headers.authorization || "").replace("Bearer ", "");
-  if (token !== ADMIN_TOKEN) return res.status(401).json({ error: "Unauthorized" });
-  next();
+// mkdir jika tidak ada
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-app.post("/admin/upload-ig", auth, upload.single("cookies"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-  return res.json({ ok: true });
+// =======================
+// Upload Cookies IG
+// =======================
+
+const ADMIN_TOKEN = "gokuryo32";
+
+// storage multer
+const storage = multer.diskStorage({
+    destination: (_, __, cb) => cb(null, DATA_DIR),
+    filename: (_, __, cb) => cb(null, "ig_cookies.txt")
 });
 
-// IG downloader
-app.post("/api/ig", (req, res) => {
-  const url = req.body.url;
-  if (!url) return res.json({ error: "URL required" });
+const upload = multer({ storage });
 
-  const args = ["-j", url];
-  if (fs.existsSync(IG_COOKIES)) {
-    args.push("--cookies", IG_COOKIES);
-  }
+// Middleware Admin
+function requireAdmin(req, res, next) {
+    const auth = req.headers.authorization || "";
+    const token = auth.replace("Bearer ", "").trim();
 
-  execFile("/usr/local/bin/yt-dlp", args, (err, stdout) => {
-    if (err) return res.json({ error: err.toString() });
+    if (token !== ADMIN_TOKEN) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    next();
+}
+
+app.post("/admin/upload-ig", requireAdmin, upload.single("cookies"), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    return res.json({ ok: true, message: "IG cookies uploaded" });
+});
+
+// =======================
+// Helper yt-dlp
+// =======================
+const YTDLP = "/usr/local/bin/yt-dlp";
+
+function runYtDlpJSON(args) {
+    return new Promise((resolve, reject) => {
+        execFile(YTDLP, args, { maxBuffer: 50 * 1024 * 1024 }, (err, stdout, stderr) => {
+            if (err) return reject(stderr || err.toString());
+            try {
+                resolve(JSON.parse(stdout.toString()));
+            } catch (e) {
+                reject("JSON parse failed: " + e.toString());
+            }
+        });
+    });
+}
+
+// =======================
+// Downloader IG
+// =======================
+
+app.post("/api/ig", async (req, res) => {
+    const { url } = req.body;
+
+    if (!url) return res.json({ error: "URL kosong" });
+
+    const cookieArgs = fs.existsSync(IG_COOKIE_PATH)
+        ? ["--cookies", IG_COOKIE_PATH]
+        : [];
 
     try {
-      const data = JSON.parse(stdout);
-      const best = data.formats.find(f => f.ext === "mp4");
-      return res.json({ url: best.url });
+        const json = await runYtDlpJSON(["-j", url, ...cookieArgs]);
+
+        const video = json.formats?.find(
+            f => f.ext === "mp4" && f.acodec !== "none"
+        );
+
+        if (!video) return res.json({ error: "Tidak ada video ditemukan" });
+
+        return res.json({ url: video.url });
+
     } catch (e) {
-      return res.json({ error: e.toString() });
+        return res.json({ error: e.toString() });
     }
-  });
 });
 
-app.listen(3000, () => console.log("Server running"));
+// =======================
+// Static File
+// =======================
+app.use(express.static("public"));
+
+// =======================
+const PORT = 3000;
+app.listen(PORT, () => console.log("Server running on port", PORT));
