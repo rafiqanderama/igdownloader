@@ -1,59 +1,150 @@
 const express = require("express");
+const cors = require("cors");
 const { execFile } = require("child_process");
+const fs = require("fs");
 const path = require("path");
+const multer = require("multer");
+
 const app = express();
-
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// serve static website from public/
-app.use(express.static(path.join(__dirname, "public")));
+// =============================
+// CONFIG
+// =============================
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "goryto32"; // token default
+const IG_COOKIE_PATH = "/data/ig_cookies.txt";
+const YTDLP = "/usr/local/bin/yt-dlp";
 
-// path to binary (downloaded in Dockerfile)
-const YTDLP = process.env.YTDLP_PATH || "/usr/local/bin/yt-dlp";
-
-function runYtDlpJson(url) {
-  return new Promise((resolve, reject) => {
-    execFile(YTDLP, ["-j", url], { maxBuffer: 1024 * 1024 * 30 }, (err, stdout, stderr) => {
-      if (err) return reject(stderr || err.toString());
-      try {
-        resolve(JSON.parse(stdout.toString()));
-      } catch (e) {
-        return reject("JSON parse error: " + e.message + " -- raw: " + stdout.toString().slice(0,1000));
-      }
+// =============================
+// Helper: jalankan yt-dlp (RAW)
+// =============================
+function runYtDlpRaw(args) {
+    return new Promise((resolve, reject) => {
+        execFile(
+            YTDLP,
+            args,
+            { maxBuffer: 1024 * 1024 * 50 },
+            (err, stdout, stderr) => {
+                if (err) return reject(stderr || err.toString());
+                resolve(stdout.toString());
+            }
+        );
     });
-  });
 }
 
-app.post("/api/ig", async (req, res) => {
-  const url = req.body.url;
-  if (!url) return res.status(400).json({ error: "URL tidak boleh kosong" });
+// =============================
+// Helper: yt-dlp JSON
+// =============================
+function runYtDlpJSON(args) {
+    return new Promise((resolve, reject) => {
+        execFile(
+            YTDLP,
+            args,
+            { maxBuffer: 1024 * 1024 * 50 },
+            (err, stdout, stderr) => {
+                if (err) return reject(stderr || err.toString());
+                try {
+                    resolve(JSON.parse(stdout.toString()));
+                } catch (e) {
+                    reject("JSON Parse Error: " + e.message);
+                }
+            }
+        );
+    });
+}
 
-  try {
-    const data = await runYtDlpJson(url);
-    let videos = [];
+// =============================
+// ADMIN AUTH MIDDLEWARE
+// =============================
+function requireAdmin(req, res, next) {
+    const header = req.headers["authorization"] || "";
+    const token = header.replace("Bearer ", "").trim();
 
-    if (Array.isArray(data.entries)) {
-      for (const e of data.entries) {
-        if (e && e.formats) {
-          const f = e.formats.find(x => x.ext === "mp4" && x.url);
-          if (f) videos.push({ url: f.url, info: e.title || null });
-        }
-      }
-    } else {
-      if (data.formats) {
-        const f = data.formats.find(x => x.ext === "mp4" && x.url);
-        if (f) videos.push({ url: f.url, info: data.title || null });
-      }
+    if (token !== ADMIN_TOKEN) {
+        return res.status(401).json({ error: "Unauthorized" });
     }
 
-    if (videos.length === 0) return res.status(404).json({ error: "Video tidak ditemukan / perlu cookie" });
-    return res.json({ results: videos });
-  } catch (e) {
-    return res.status(500).json({ error: String(e) });
-  }
+    next();
+}
+
+// =============================
+// UPLOAD IG COOKIES
+// =============================
+const storageIG = multer.diskStorage({
+    destination: (_, __, cb) => cb(null, "/data"),
+    filename: (_, __, cb) => cb(null, "ig_cookies.txt")
+});
+const uploadIG = multer({ storage: storageIG });
+
+app.post("/admin/upload-ig", requireAdmin, uploadIG.single("cookies"), (req, res) => {
+    if (!req.file) return res.json({ error: "Tidak ada file diupload" });
+
+    return res.json({
+        message: "Instagram cookies berhasil diupload!",
+        path: IG_COOKIE_PATH
+    });
 });
 
-// fallback: make sure root returns index.html (static express already handles it)
+// =============================
+// CEK STATUS COOKIES IG
+// =============================
+app.get("/admin/ig-cookie-status", requireAdmin, (req, res) => {
+    const exists = fs.existsSync(IG_COOKIE_PATH);
+    res.json({ exists });
+});
+
+// =============================
+// IG DOWNLOADER API
+// =============================
+app.post("/api/ig", async (req, res) => {
+    const { url } = req.body;
+    if (!url) return res.json({ error: "URL tidak boleh kosong" });
+
+    const cookieArgs = fs.existsSync(IG_COOKIE_PATH)
+        ? ["--cookies", IG_COOKIE_PATH]
+        : [];
+
+    try {
+        const json = await runYtDlpJSON(["-j", ...cookieArgs, url]);
+
+        let results = [];
+
+        // Jika playlist (Reels multi)
+        if (Array.isArray(json.entries)) {
+            for (const e of json.entries) {
+                const vid = e.formats?.find(f => f.ext === "mp4" && f.url);
+                if (vid) results.push(vid.url);
+            }
+        } else {
+            const vid = json.formats?.find(f => f.ext === "mp4" && f.url);
+            if (vid) results.push(vid.url);
+        }
+
+        if (results.length === 0) {
+            return res.json({ error: "Tidak dapat mengambil video IG. Coba upload cookies IG." });
+        }
+
+        return res.json({ video: results });
+
+    } catch (e) {
+        return res.json({ error: e.toString() });
+    }
+});
+
+// =============================
+// STATIC FILES (index.html)
+// =============================
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// =============================
+// START SERVER
+// =============================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => console.log("IG Downloader running on port", PORT));
+app.listen(PORT, () => {
+    console.log("Server running on port", PORT);
+});
